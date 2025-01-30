@@ -14,10 +14,3 @@ This Python script generates personalized door decorations for residents using i
 Ensure you have the following installed:
 ```sh
 pip install pillow reportlab pandas openpyxl
-
-### Next Steps:
-1. **Save this as `README.md`** in your repository.
-2. **Push it to GitHub** (`git add README.md && git commit -m "Add README" && git push`).
-3. **Check your repository**—GitHub will display it properly.
-
-Let me know if you need adjustments! 🚀

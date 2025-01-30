@@ -38,13 +38,11 @@ def getNames():
     df = pd.read_excel('FloorStuff.xlsx')  
     return df["First Name"].dropna().tolist()  # Convert to a list
 
-from PIL import ImageDraw, ImageFont
-
-def displayName(image):
+def displayName(image, name):
     width, height = image.size
     draw = ImageDraw.Draw(image)
     
-    text = "Ian (RA)"
+    text = name
     black = (0, 0, 0)  
 
     # Load font with adjustable size
@@ -83,17 +81,17 @@ def addPicture(pdf_canvas, image, position, page_width, page_height):
 
     # Position the image based on the input position argument
     if position == 1:  # Top-Left corner
-        x_pos, y_pos = 0, page_height - img_height
+        x_pos, y_pos = 10, page_height - img_height - 2
     elif position == 2:  # Top-Right corner
-        x_pos, y_pos = page_width - img_width, page_height - img_height
+        x_pos, y_pos = page_width - img_width - 10, page_height - img_height - 2
     elif position == 3:  # Middle-left
-        x_pos, y_pos = 0, (page_height - img_height) // 2
+        x_pos, y_pos = 10, (page_height - img_height) // 2
     elif position == 4:  # Middle-right
-        x_pos, y_pos = page_width - img_width, (page_height - img_height) // 2
+        x_pos, y_pos = page_width - img_width - 10, (page_height - img_height) // 2
     elif position == 5:  # Bottom-left
-        x_pos, y_pos = 0, 0
+        x_pos, y_pos = 10, 0 + 2
     elif position == 6:  # Bottom-right
-        x_pos, y_pos = page_width - img_width, 0
+        x_pos, y_pos = page_width - img_width - 10, 0 + 2
     else:
         raise ValueError("Invalid position number. Choose from 1, 2, 3, 4, 5, 6.")
 
@@ -109,39 +107,79 @@ def addPicture(pdf_canvas, image, position, page_width, page_height):
     os.remove(temp_image_path)
 
 def main():
-    folder_path = r"C:\Users\IanKe\Downloads\Door-Dec-Creator\Porsche Pictures"  # Path to your folder
-    files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-    
-    # Create the PDF canvas outside the loop (to keep adding to the same PDF)
-    pdf_file = "DoorDecs.pdf"
-    c = canvas.Canvas(pdf_file, pagesize=letter)
+    choice = input("Type 'Roster' to make full roster or 'Custom' to make a Custom/Replacement sheet: ").strip()
 
-    page_width, page_height = letter  # The width and height of the page in points
+    if choice == "Roster":
+        folder_path = r"C:\Users\IanKe\Downloads\Door-Dec-Creator\Porsche Pictures"  # Path to your folder
+        files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
 
-    i = 0  # Start at 0 to properly cycle through 1-6
+        pdf_file = "DoorDecs.pdf"
+        c = canvas.Canvas(pdf_file, pagesize=letter)
+        page_width, page_height = letter
 
-    for file in files:
-        image_path = os.path.join(folder_path, file)  # Get full path to the image file
+        i = 0  # Start at 0 to properly cycle through 1-6
+        names = getNames()
+        images_on_current_page = 0  # Track images on the current page
 
-        with Image.open(image_path) as image:
-            image = dynamicallyCrop(image)  # Crop the image as needed
-            whiteBox(image)  # Add the white box
-            displayName(image)  # Add the name text
+        for name in names:
+            file = files[i % len(files)]
+            image_path = os.path.join(folder_path, file)
 
-            # Ensure position cycles from 1 to 6
-            position = (i % 6) + 1  
-            addPicture(c, image, position, page_width, page_height)
+            with Image.open(image_path) as image:
+                image = dynamicallyCrop(image)
+                whiteBox(image)
+                displayName(image, name)
 
-            i += 1  # Increment the counter for the next image
+                position = (i % 6) + 1
+                addPicture(c, image, position, page_width, page_height)
 
-            # Start a new page after every 6 images
-            if position == 6:
-                c.showPage()
+                i += 1
+                images_on_current_page += 1
 
-    # Save the PDF after all images are added
-    c.save()
+                if position == 6:
+                    c.showPage()
+                    images_on_current_page = 0  # Reset for new page
 
-    print(f"PDF created: {pdf_file}")
+        # Save the PDF after all images are added
+        c.save()
+        print(f"PDF created: {pdf_file}")
+
+    elif choice == "Custom":
+        folder_path = r"C:\Users\IanKe\Downloads\Door-Dec-Creator\Porsche Pictures"
+        files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+
+        pdf_file = "CustomDoorDecs.pdf"
+        c = canvas.Canvas(pdf_file, pagesize=letter)
+        page_width, page_height = letter
+
+        i = 0
+        images_on_current_page = 0  # Initialize tracking variable
+
+        names = input("Enter the names of all residents in this format (e.g., Billy,Bob,Joe): ").strip()
+        name_list = [name.strip() for name in names.split(",")]
+
+        for name in name_list:
+            file = files[i % len(files)]
+            image_path = os.path.join(folder_path, file)
+
+            with Image.open(image_path) as image:
+                image = dynamicallyCrop(image)
+                whiteBox(image)
+                displayName(image, name)
+
+                position = (i % 6) + 1
+                addPicture(c, image, position, page_width, page_height)
+
+                i += 1
+                images_on_current_page += 1
+
+                if position == 6:
+                    c.showPage()
+                    images_on_current_page = 0  # Reset for new page
+
+        # Save the PDF after all images are added
+        c.save()
+        print(f"PDF created: {pdf_file}")
 
 if __name__ == "__main__":
     main()
